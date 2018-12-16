@@ -1,0 +1,9 @@
+/applicationContext.xml
+/com
+/datasource.properties
+/ehcache.xml
+/house-mysql.sql
+/house.sql
+/log4j.properties
+/mybatis-config.xml
+/springmvc.xml

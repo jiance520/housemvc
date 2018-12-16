@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.entity.HouseMapper">
+  <resultMap id="BaseResultMap" type="com.entity.House">
+    <id column="ID" jdbcType="INTEGER" property="id" />
+    <result column="USER_ID" jdbcType="INTEGER" property="userId" />
+    <result column="TYPE_ID" jdbcType="INTEGER" property="typeId" />
+    <result column="TITLE" jdbcType="VARCHAR" property="title" />
+    <result column="DESCRIPTION" jdbcType="VARCHAR" property="description" />
+    <result column="PRICE" jdbcType="INTEGER" property="price" />
+    <result column="PUBDATE" jdbcType="TIMESTAMP" property="pubdate" />
+    <result column="FLOORAGE" jdbcType="INTEGER" property="floorage" />
+    <result column="CONTACT" jdbcType="VARCHAR" property="contact" />
+    <result column="STREET_ID" jdbcType="INTEGER" property="streetId" />
+    <result column="IMAGE" jdbcType="VARCHAR" property="image" />
+	<association column="STREET_ID" javaType="Street" property="street">
+    	<id column="SID" jdbcType="INTEGER" property="id" />
+    	<result column="SNAME" jdbcType="VARCHAR" property="name" />
+    	<result column="DISTRICT_ID" jdbcType="INTEGER" property="districtId" />
+    	<association column="DISTRICT_ID" javaType="District" property="district">
+    		<id column="DID" jdbcType="INTEGER" property="id" />
+    		<result column="DNAME" jdbcType="VARCHAR" property="name" />
+    	</association>
+    </association>
+    <association column="TYPE_ID" javaType="Type2" property="type">
+    	<id column="TID" jdbcType="INTEGER" property="id" />
+    	<result column="TNAME" jdbcType="VARCHAR" property="name" />
+    </association>
+    <association column="USER_ID" javaType="Users" property="user">
+    	<id column="UID" jdbcType="INTEGER" property="id" />
+    	<result column="UNAME" jdbcType="VARCHAR" property="name" />
+    	<result column="PASSWORD" jdbcType="VARCHAR" property="password" />
+    	<result column="TELEPHONE" jdbcType="VARCHAR" property="telephone" />
+    	<result column="USERNAME" jdbcType="VARCHAR" property="username" />
+    	<result column="ISADMIN" jdbcType="VARCHAR" property="isadmin" />
+    </association>
+  </resultMap>
+  <sql id="Base_Column_List">
+    ID, USER_ID, TYPE_ID, TITLE, DESCRIPTION, PRICE, PUBDATE, FLOORAGE, CONTACT, STREET_ID, 
+    IMAGE
+  </sql>
+  
+<select id="selectHouseCount" resultType="java.lang.Integer">
+  select COUNT(1) from house
+  </select>
+<select id="selectHouseCountMap" parameterType="java.util.Map" resultType="java.lang.Integer" flushCache="true" useCache="false">
+SELECT count(1)
+FROM house h
+INNER JOIN street s ON h.street_id = s.id 
+INNER JOIN type2 t ON h.type_id = t.id
+INNER JOIN users u ON h.user_id = u.id
+INNER JOIN district d ON s.district_id = d.id
+    <where>
+    	<if test="title!=null and title!=''">and TITLE like "%"#{title}"%"</if>
+    	<if test="price!=null and price!=''">and PRICE between #{price} and #{price}+1000</if>
+    	<if test="description!=null and description!=''">and DESCRIPTION=#{description}</if>
+    	<if test="streetId!=null and streetId!=''">and STREET_ID=#{streetId}</if>
+    	<if test="typeId!=null and typeId!=''">and TYPE_ID=#{typeId}</if>
+    	<if test="floorage!=null and floorage!=''">and FLOORAGE between #{floorage} and #{floorage}+100</if>
+    	<if test="streetidlist!=null"><!-- 如果有地区，显示所有当前地区的街道 -->
+	    	and STREET_ID in 
+	    	<foreach close=")" collection="streetidlist" item="stid" open="(" separator=",">
+	    		#{stid,jdbcType=INTEGER}
+	    	</foreach>
+    	</if>
+    	<if test="image!=null and streetId!=''">and IMAGE=#{image}</if>
+    </where>
+  </select>
+  <!--多条件分页查询，起始页，默认显示房源  -->
+  <select flushCache="true" id="selectPage" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+SELECT h.*,s.*,t.*,u.*,d.*,
+s.id AS sid,t.id AS tid,u.id AS uid,d.id AS did,
+s.name AS sname,t.name AS tname,u.name AS uname,d.name AS dname
+FROM house h
+INNER JOIN street s ON h.street_id = s.id 
+INNER JOIN type2 t ON h.type_id = t.id
+INNER JOIN users u ON h.user_id = u.id
+INNER JOIN district d ON s.district_id = d.id order by pubdate desc limit #{num},4
+  </select> 
+  <!-- 多条件查询(其中标题模糊查询) -->
+    <select flushCache="true" id="selectSearch" parameterType="java.util.Map" resultMap="BaseResultMap" useCache="false">
+SELECT h.*,s.*,t.*,u.*,d.*,
+s.id AS sid,t.id AS tid,u.id AS uid,d.id AS did,
+s.name AS sname,t.name AS tname,u.name AS uname,d.name AS dname
+FROM house h
+INNER JOIN street s ON h.street_id = s.id 
+INNER JOIN type2 t ON h.type_id = t.id
+INNER JOIN users u ON h.user_id = u.id
+INNER JOIN district d ON s.district_id = d.id
+    <where>
+    	<if test="title!=null and title!=''">and TITLE like "%"#{title}"%"</if>
+    	<if test="price!=null and price!=''">and PRICE between #{price} and #{price}+1000</if>
+    	<if test="description!=null and description!=''">and DESCRIPTION=#{description}</if>
+    	<if test="streetId!=null and streetId!=''">and STREET_ID=#{streetId}</if>
+    	<if test="typeId!=null and typeId!=''">and TYPE_ID=#{typeId}</if>
+    	<if test="floorage!=null and floorage!=''">and FLOORAGE between #{floorage} and #{floorage}+100</if>
+    	<if test="streetidlist!=null"><!-- 如果有地区，显示所有当前地区的街道 -->
+	    	and STREET_ID in 
+	    	<foreach close=")" collection="streetidlist" item="stid" open="(" separator=",">
+	    		#{stid,jdbcType=INTEGER}
+	    	</foreach>
+    	</if>
+    	<if test="image!=null and streetId!=''">and IMAGE=#{image}</if>
+    </where>
+    	order by pubdate desc
+   	 	<if test="num!=null">limit #{num},4</if>
+  </select>
+  <!--多表连接查询单个 -->
+	<select flushCache="true" id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap" useCache="false">
+SELECT h.*,s.*,t.*,u.*,d.*,
+s.id AS sid,t.id AS tid,u.id AS uid,d.id AS did,
+s.name AS sname,t.name AS tname,u.name AS uname,d.name AS dname
+FROM house h
+INNER JOIN street s ON h.street_id = s.id 
+INNER JOIN type2 t ON h.type_id = t.id
+INNER JOIN users u ON h.user_id = u.id
+INNER JOIN district d ON s.district_id = d.id
+WHERE h.id=#{id};
+	</select>
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from house
+    where ID = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.entity.House">
+    insert into house (ID, USER_ID, TYPE_ID, 
+      TITLE, DESCRIPTION, PRICE, 
+      PUBDATE, FLOORAGE, CONTACT, 
+      STREET_ID, IMAGE)
+    values (#{id,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER}, #{typeId,jdbcType=INTEGER}, 
+      #{title,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{price,jdbcType=INTEGER}, 
+      #{pubdate,jdbcType=TIMESTAMP}, #{floorage,jdbcType=INTEGER}, #{contact,jdbcType=VARCHAR}, 
+      #{streetId,jdbcType=INTEGER}, #{image,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.entity.House">
+    insert into house
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        ID,
+      </if>
+      <if test="userId != null">
+        USER_ID,
+      </if>
+      <if test="typeId != null">
+        TYPE_ID,
+      </if>
+      <if test="title != null">
+        TITLE,
+      </if>
+      <if test="description != null">
+        DESCRIPTION,
+      </if>
+      <if test="price != null">
+        PRICE,
+      </if>
+      <if test="pubdate != null">
+        PUBDATE,
+      </if>
+      <if test="floorage != null">
+        FLOORAGE,
+      </if>
+      <if test="contact != null">
+        CONTACT,
+      </if>
+      <if test="streetId != null">
+        STREET_ID,
+      </if>
+      <if test="image != null">
+        IMAGE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="title != null">
+        #{title,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null">
+        #{price,jdbcType=INTEGER},
+      </if>
+      <if test="pubdate != null">
+        #{pubdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="floorage != null">
+        #{floorage,jdbcType=INTEGER},
+      </if>
+      <if test="contact != null">
+        #{contact,jdbcType=VARCHAR},
+      </if>
+      <if test="streetId != null">
+        #{streetId,jdbcType=INTEGER},
+      </if>
+      <if test="image != null">
+        #{image,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update flushCache="true" id="updateByPrimaryKeySelective" parameterType="com.entity.House">
+    update house
+    <set>
+      <if test="userId != null">
+        USER_ID = #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="typeId != null">
+        TYPE_ID = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="title != null">
+        TITLE = #{title,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        DESCRIPTION = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null">
+        PRICE = #{price,jdbcType=INTEGER},
+      </if>
+      <if test="pubdate != null">
+        PUBDATE = #{pubdate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="floorage != null">
+        FLOORAGE = #{floorage,jdbcType=INTEGER},
+      </if>
+      <if test="contact != null">
+        CONTACT = #{contact,jdbcType=VARCHAR},
+      </if>
+      <if test="streetId != null">
+        STREET_ID = #{streetId,jdbcType=INTEGER},
+      </if>
+      <if test="image != null">
+        IMAGE = #{image,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.entity.House">
+    update house
+    set USER_ID = #{userId,jdbcType=INTEGER},
+      TYPE_ID = #{typeId,jdbcType=INTEGER},
+      TITLE = #{title,jdbcType=VARCHAR},
+      DESCRIPTION = #{description,jdbcType=VARCHAR},
+      PRICE = #{price,jdbcType=INTEGER},
+      PUBDATE = #{pubdate,jdbcType=TIMESTAMP},
+      FLOORAGE = #{floorage,jdbcType=INTEGER},
+      CONTACT = #{contact,jdbcType=VARCHAR},
+      STREET_ID = #{streetId,jdbcType=INTEGER},
+      IMAGE = #{image,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

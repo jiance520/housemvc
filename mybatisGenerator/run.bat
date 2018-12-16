@@ -1,0 +1,1 @@
+java -jar D:\workspace\myeclipse\newfile\housemvc\mybatisGenerator\mybatis-generator-core-1.3.2.jar -configfile D:\workspace\myeclipse\newfile\housemvc\mybatisGenerator\generator.xml -overwrite
